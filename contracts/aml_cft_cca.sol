@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+// import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /************************************************************************************************ */
 /* 
@@ -14,7 +14,8 @@ This is a comrehensive smart contract template which handles :
 /************************************************************************************************ */
 
 contract AML_CFT_CCA is Ownable {
-    using SafeMath for uint256;
+    // using SafeMath for uint256;
+    address owner;
 
     // Token contract address
     address public token;
@@ -41,10 +42,16 @@ contract AML_CFT_CCA is Ownable {
 
     event UserVerified(address indexed user);
     event TransactionRecorded(address indexed from, address indexed to, uint256 amount, bool isSuspicious);
-    event CheckBalance(string text, uint amount);
+    event CheckBalance(uint amount);
 
     constructor(address _token) {
         token = _token;
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == issuer, "Only owner can call this function");
+        _;
     }
 
     // Verify user identity for AML/CFT compliance
@@ -69,8 +76,16 @@ contract AML_CFT_CCA is Ownable {
         identities[from].transactionCount++;
 
         // Update user balances
-        identities[from].balance = identities[from].balance.sub(amount);
-        identities[to].balance = identities[to].balance.add(amount);
+
+        uint fromAmount = identities[from].balance - amount;
+        identities[from].balance = fromAmount;
+
+        uint toAmount = identities[to].balance + amount;
+        identities[to].balance = toAmount;
+
+
+        // identities[from].balance = identities[from].balance.sub(amount);
+        // identities[to].balance = identities[to].balance.add(amount);
     }
 
         // Implement AML/CFT checks here, mark as suspicious if needed --
@@ -155,11 +170,8 @@ contract AML_CFT_CCA is Ownable {
     }
 
     function getBalance(address user_account) external returns (uint){
-    
-       string memory data = "User Balance is : ";
        uint user_bal = user_account.balance;
-       emit CheckBalance(data, user_bal );
+       emit CheckBalance(user_bal);
        return (user_bal);
-
     }
 }
